@@ -1,742 +1,279 @@
-// signal_t.cpp: 	
-// double signal_fft::X( int k ) // AIO-i?aia?aciaaiea "aaai?ea"
-//
-//////////////////////////////////////////////////////////////////////
-#include <OAIDL.H>
 #include <iostream.h>
-#include <time.h>
-#define FDLL2API extern "C" __declspec(dllexport)
-#include "include\mathfunc.h"
-#include "include\signal_t.h"
-#include "include\signal_fft.h"
+#include <fstream.h>
+#include <stdlib.h>
 
-
-
-//////////////////////////////////////////////////////////////////////
-// Construction/Destruction
-//////////////////////////////////////////////////////////////////////
-
-//double ToDb ( double );
-//double log2(double x);
-
-
-MainSignal::MainSignal()
+void fill(double array[289][25])
 {
-//	input = 0.0;
-//	inp_matrix = (double*)calloc(32,  sizeof(double));
+	for(int i=0;i<289;i++)
+	{
+		for(int j=0;j<25;j++)
+		{
+			array[i][j] = double(rand())/double(RAND_MAX);
+		}
+	}
 }
 
-
-signal_fft::signal_fft(  )
+int get_max(double array[25])
 {
+	double max=0.0;
+	int address=0;
+	for(int i=0;i<25;i++)
+	{
+		if(max < array[i])
+		{
+			max=array[i];
+			address=i;
+		}
+	}
+	array[address]=-8888.88;
+
+	for(i=0;i<25;i++)
+	{
+		if(i!=address && array[i]>=0)
+			array[i]=0.0;
+	}
+	return address;
 }
 
-
-void signal_fft::IFFT()
+void main()
 {
-	int i , s, S , Ns, r,  z, kk, ds, iji, jj;
-	double  minRe, maxRe, minIm, maxIm;
 	
-	double x1,y1,t,x,y;
-	int s1,s2,s0;
-	s = 1;
-	for ( i = 0; i < N; i++ )
-	{
-		sign_matrixRe[i] = freq_matrixRe[i];
-		sign_matrixIm[i] = freq_matrixIm[i];
-	}
-	
-	Ns = 0;
-	s = 1;
-	z = 0;
-	x1 = 0.0;
-	for ( i = 1; i < N; i++ )
-	{
-		if ( i < s )
-		{
-			x1 = sign_matrixRe[s];
-			sign_matrixRe[s] = sign_matrixRe[i];
-			sign_matrixRe[i] = x1;
-			x1 = sign_matrixIm[s];
-			sign_matrixIm[s] = sign_matrixIm[i];
-			sign_matrixIm[i] = x1;
-		}
-		kk = (int)( N / 2 );
-		while ( kk < s )
-		{
-			s = s - kk;
-			kk = kk >> 1;				
-		}
-		s = s + kk;
-	}
-	
-	Ns = N;
-	r = N ;
-	ds = 1;
-	S = 1;
-	/*
-	i - "noieaou" aaai?ee 
-	n - eie-ai oeeeia ia?aiii?aiey ( ia?ae?anoee ), oiaiuo. / 2 n i?ioi?aaieai "noieaoia" i
-	
-	  s - eie-ai ia?aiii?aiee, oaaee?. a 2 ?aca ii i?ioi?aaie? noieaoia AIO
-	  r - exp(-j2 * Pi * r / N)
-	  ds - ?aciinou cia?aiee iiia?ia ia?aiii?aaiuo yeaiaioia
-	*/
+	int input[289];
+	int output[289];
+	double w1[289][25];
+	double w2[25][289];
+	double hidden[25];
+	char next;
+	ifstream fin;
+	char filename[200];
+	cout << "Enter file name to learn: ";
+	cin >> filename;
+	fin.open(filename);
 
-	x=sign_matrixIm[N-1];
+	int i=0;
+	int j=0;
 	
-	for ( i = 1; i <= (int)log2(N); i++ )
+	
+	int lines=1;
+	fin.get(next);
+	while(lines != 18 )
 	{
+		if(next=='\n')
+		{			
+			lines++;
+		}
+		else
+		{			
+			if(next == '*')
+				input[i]=1;
+			else
+				input[i]=0;
+			i++;
+		}
+		fin.get(next);
+	}
 
-		
-		s1 = 1 << i;
-		s2 = s1 >> 1;
-		x1 = 1.0;
-		y1 = 0.0;
-		z = ( cos(Pi / s2 ) );
-		t = ( sin(Pi / s2 ) );
-		for ( jj=1; jj<=s2; jj++ )
+	for(i=0;i<289;i++)
+		output[i]=input[i];
+	for(i=0;i<289;i++)
+	{
+		if(i%17==0)
 		{
-			iji=jj;
-			while(iji<=N)
-			{
-					 s0=iji+s2;
-					 x=sign_matrixRe[s0]*x1 - sign_matrixIm[s0]*y1;
-					 y=sign_matrixIm[s0]*x1 + sign_matrixRe[s0]*y1;
-					 sign_matrixRe[s0]=sign_matrixRe[iji] - x;
-					 sign_matrixIm[s0]=sign_matrixIm[iji] - y;
-					 sign_matrixRe[iji]=sign_matrixRe[iji] + x;
-					 sign_matrixIm[iji]=sign_matrixIm[iji] + y;
-					 iji+=s1;
-			}
-			x=x1;
-			x1+=x1*z-y1*t;
-			y1+=y1*z+x*t;
+			cout << endl;
+		}
+		else
+			cout << output[i];
+	}
+	cout << "\n" << endl;
+
+	
+	for(i=0;i<25;i++)
+	{
+		for(j=0;j<289;j++)
+			w2[i][j] = 0.0;
+	}
+
+	fill(w1);
+
+	for(i=0;i<25;i++)
+		hidden[i]=0.0;
+	
+	/************************************/
+	for(i=0;i<289;i++)
+	{
+		for(j=0;j<25;j++)
+		{
+			hidden[j] += input[i]*w1[i][j];
+			//cout << hidden[j] << endl;
 		}
 	}
-	 
+	int max = get_max(hidden);
+
+	
+	for(i=0;i<289;i++)
+	{
+		if(input[i]==1)
+		{
+			w2[max][i] = 1;
+			w1[i][max]=1;
+		}
+		else
+		{
+			w2[max][i] = 0;
+			w1[i][max]=0;
+		}
+
+	}
+	/****************************************/
+
+	for(i=0;i<289;i++)
+	{
+		input[i]=0;
+		output[i]=0;
+	}
+	/***************************************/
+	
+	ifstream fin1;
+	cout << "Enter file name to learn: ";
+	cin >> filename;
+	fin1.open(filename);
+
+	lines=1;
+	fin1.get(next);
+	i=0;
+	while(lines != 18 )
+	{
+		if(next=='\n')
+		{			
+			lines++;
+		}
+		else
+		{
+			if(next == '*')
+				input[i]=1;
+			else
+				input[i]=0;
+			i++;
+		}
+		fin1.get(next);
+	}
+
+	for(i=0;i<289;i++)
+		output[i]=input[i];
+
+	for(i=0;i<289;i++)
+	{
+		if(i%17==0)
+		{
+			cout << endl;
+		}
+		else
+			cout << output[i];
+	}
+
+	cout << "\n" << endl;
+
+	
+	
+	for(i=0;i<289;i++)
+	{
+		for(j=0;j<25;j++)
+		{
+			hidden[j] += input[i]*w1[i][j];
+		}
+	}
+	max = get_max(hidden);
+	
+	for(i=0;i<289;i++)
+	{
+		if(input[i]==1)
+		{
+			w2[max][i] = 1;
+			w1[i][max]=1;
+		}
+		else
+		{
+			w2[max][i] = 0;
+			w1[i][max]=0;
+		}
+
+	}
+
+	for(i=0;i<289;i++)
+	{
+		input[i]=0;
+		output[i]=0;
+	}
+
+
+	for(i=0;i<25;i++)
+		hidden[i]=0.0;
+	
+	ifstream fin2;
+	cout << "Enter file name to recognize: ";
+	cin >> filename;
+	fin2.open(filename);
+
+	lines=1;
+	fin2.get(next);
+	i=0;
+	while(lines != 18 )
+	{
+		if(next=='\n')
+		{			
+			lines++;
+		}
+		else
+		{			
+			if(next == '*')
+				input[i]=1;
+			else
+				input[i]=0;
+			i++;
+		}
+		fin2.get(next);
+	}
+
+	for(i=0;i<289;i++)
+		output[i]=input[i];
+	for(i=0;i<289;i++)
+	{
+		if(i%17==0)
+		{
+			cout << endl;
+		}
+		else
+			cout << output[i];
+	}
+
+	for(i=0;i<289;i++)
+	{
+		for(j=0;j<25;j++)
+		{
+			hidden[j] += input[i]*w1[i][j];
+		}
+	}
+
+	max = get_max(hidden);
+
+	cout << "\n\nRecognized as: " << endl;
+
+	for(i=0;i<289;i++)
+	{
+		output[i]=w2[max][i];
+	//	cout << w2[max][i] << endl;
+	}
+
+	for(i=0;i<289;i++)
+	{
+		if(i%17==0)
+		{
+			cout << endl;
+		}
+		else
+			cout << output[i];
+	}
+
+
+	
 }
-
-
-
-
-	
-	
-	
-	void MainSignal::form_matrix(  ) // Eieoeaeecaoee iao?eo ion?aoia e AIO-i?aia?aciaaiey
-	{
-		sign_matrixRe = (double*)calloc( N,  sizeof(double));
-		freq_matrixRe = (double*)calloc( N,  sizeof(double));
-		sign_matrixIm = (double*)calloc( N,  sizeof(double));
-		freq_matrixIm = (double*)calloc( N,  sizeof(double));
-	}
-	
-
-
-
-	void signal_fft::FFT_matrix() // AIO-i?aia?aciaaiea "aaai?ea"
-	{
-		int s1,s2,s0, i;
-
-
-	}
-
-
-
-	void signal_fft::FFT() // AIO-i?aia?aciaaiea "aaai?ea"
-	{
-		int i , s, S , Ns, r,  z, kk, ds, iji, jj;
-		double  minRe, maxRe, minIm, maxIm;
-
-		double x1,y1,t,x,y;
-		int s1,s2,s0;
-	
-		freq_matrixRe = sign_matrixRe;
-		freq_matrixIm = sign_matrixIm;
-	
-		minRe = minIm = 1.0;
-		maxRe = maxIm = 0.0;
-		
-		Ns = 0;
-		s = 1;
-		z = 0;
-		for ( i = 1; i < N; i++ )
-		{
-			if ( i < s )
-			{
-				x1 = sign_matrixRe[s];
-				freq_matrixRe[s] = freq_matrixRe[i];
-				freq_matrixRe[i] = x1;
-				x1 = sign_matrixIm[s];
-				freq_matrixIm[s] = freq_matrixIm[i];
-				freq_matrixIm[i] = x1;
-			}
-			kk = (int)( N / 2 );
-			while ( kk < s )
-			{
-				s = s - kk;
-				kk = kk >> 1;				
-			}
-			s = s + kk;
-		}
-		
-		Ns = N;
-		r = N ;
-		ds = 1;
-		S = 1;
-
-		s1=0;
-		/*
-		i - "noieaou" aaai?ee 
-		n - eie-ai oeeeia ia?aiii?aiey ( ia?ae?anoee ), oiaiuo. / 2 n i?ioi?aaieai "noieaoia" i
-		
-		  s - eie-ai ia?aiii?aiee, oaaee?. a 2 ?aca ii i?ioi?aaie? noieaoia AIO
-		  r - exp(-j2 * Pi * r / N)
-		  ds - ?aciinou cia?aiee iiia?ia ia?aiii?aaiuo yeaiaioia
-		*/
-		x=freq_matrixIm[N-1];
-		
-		for ( i = 1; i <= (int)log2(N); i++ )
-		{
-
-
-			 s1 = 1 << i;
-			 s2 = s1 >> 1;
-			 x1 = 1.0;
-			 y1 = 0.0;
-			 z = ( cos(Pi / s2) );
-			 t = -( sin(Pi / s2) );
-			 for ( jj=1; jj<=s2; jj++ )
-			 {
-				 iji=jj;
-				 while(iji<=N)
-				 {
-					 s0=iji+s2;
-					 x=freq_matrixRe[s0]*x1 - freq_matrixIm[s0]*y1;
-					 y=freq_matrixIm[s0]*x1 + freq_matrixRe[s0]*y1;
-					 freq_matrixRe[s0]=freq_matrixRe[iji] - x;
-					 freq_matrixIm[s0]=freq_matrixIm[iji] - y;
-					 freq_matrixRe[iji]=freq_matrixRe[iji] + x;
-					 freq_matrixIm[iji]=freq_matrixIm[iji] + y;
-					 iji+=s1;
-				 }
-				 x=x1;
-				 x1+=x1*z-y1*t;
-				 y1+=y1*z+x*t ;
-			//	 cout << t;
-			 }
-
-			}
-		}
-
-
-	void signal_fft::FFT4() // AIO-i?aia?aciaaiea "aaai?ea"
-	{
-		int i = 0 , s = 0, S = 0 , Ns = 0, r = 0,  z = 0, kk = 0, ds = 0, iji = 0, jj = 0;
-//		double  minRe  = 0.0, maxRe  = 0.0, minIm  = 0.0, maxIm  = 0.0;
-		
-		double x1 = 0.0,y1 = 0.0,t = 0.0,x = 0.0,y = 0.0;
-		int s1 = 0,s2 = 0,s0 = 0;
-		
-//		for ( i = 0; i < N; i++ )
-//		{
-			freq_matrixRe = sign_matrixRe;
-			freq_matrixIm = sign_matrixIm;
-//		}
-//		minRe = minIm = 1.0;
-//		maxRe = maxIm = 0.0;
-		
-		Ns = 0;
-		s = 1;
-		z = 0;
-		for ( i = 1; i < N; i++ )
-		{
-			if ( i < s )
-			{
-				x1 = sign_matrixRe[s];
-				freq_matrixRe[s] = freq_matrixRe[i];
-				freq_matrixRe[i] = x1;
-				x1 = sign_matrixIm[s];
-				freq_matrixIm[s] = freq_matrixIm[i];
-				freq_matrixIm[i] = x1;
-			}
-			kk = (int)( N / 2 );
-			while ( kk < s )
-			{
-				s = s - kk;
-				kk = kk >> 1;				
-			}
-			s = s + kk;
-		}
-		
-		Ns = N;
-		r = N ;
-		ds = 1;
-		S = 1;
-		
-		s1=0;
-		/*
-		i - "noieaou" aaai?ee 
-		n - eie-ai oeeeia ia?aiii?aiey ( ia?ae?anoee ), oiaiuo. / 2 n i?ioi?aaieai "noieaoia" i
-		
-		  s - eie-ai ia?aiii?aiee, oaaee?. a 2 ?aca ii i?ioi?aaie? noieaoia AIO
-		  r - exp(-j2 * Pi * r / N)
-		  ds - ?aciinou cia?aiee iiia?ia ia?aiii?aaiuo yeaiaioia
-		*/
-		//x=freq_matrixIm[N-1];
-		
-		for ( i = 1; i <= (int)log2(N); i++ )
-		{
-			
-			s1 = 1 << i;
-			s2 = s1 >> 1;
-			x1 = 1.0;
-			y1 = 0.0;
-			z = ( cos(Pi / s2 ) );
-			t = -( sin(Pi / s2 ) );
-			for ( jj = 1; jj <= s2; jj++ )
-			{
-				iji = jj;
-				while( iji <= N/4 )
-				{
-					s0=iji+s2;
-					x=freq_matrixRe[s0]*x1 - freq_matrixIm[s0]*y1;
-					y=freq_matrixIm[s0]*x1 + freq_matrixRe[s0]*y1;
-
-					freq_matrixRe[s0]=freq_matrixRe[iji] - x;
-					freq_matrixIm[s0]=freq_matrixIm[iji] - y;
-					freq_matrixRe[s0+1]=freq_matrixRe[iji+1] - x;
-					freq_matrixIm[s0+1]=freq_matrixIm[iji+1] - y;
-					freq_matrixRe[s0+2]=freq_matrixRe[iji+2] - x;
-					freq_matrixIm[s0+2]=freq_matrixIm[iji+2] - y;
-					freq_matrixRe[s0+3]=freq_matrixRe[iji+3] - x;
-					freq_matrixIm[s0+3]=freq_matrixIm[iji+3] - y;
-
-					freq_matrixRe[iji]+=x;
-					freq_matrixIm[iji]+=y;
-					freq_matrixRe[iji+1]+=x;
-					freq_matrixIm[iji+1]+=y;
-					freq_matrixRe[iji+2]+=x;
-					freq_matrixIm[iji+2]+=y;
-					freq_matrixRe[iji+3]+=x;
-					freq_matrixIm[iji+3]+=y;
-
-
-					iji+=s1;
-
-				}
-				x = x1;
-				x1+=x1*z - y1*t;
-				y1+=y1*z + x*t ;
-				//	 cout << t;
-			}
-			
-		}
-		}
-		
-	    void signal_fft::Vinograd_Matrix( int k )
-		{
-			int i = 0,j = 0;
-			axRe = (double*)calloc( k, sizeof(double));
-			bxRe = (double*)calloc( k, sizeof(double));
-			cxRe = (double*)calloc( k, sizeof(double));
-			sxRe = (double*)calloc( k, sizeof(double));
-			mxRe = (double*)calloc( 8, sizeof(double));
-			csxRe = (double*)calloc( k, sizeof(double));
-			aRe = (double*)calloc( k, sizeof(double));
-			bRe = (double*)calloc( k, sizeof(double));
-			
-			axIm = (double*)calloc( k, sizeof(double));
-			bxIm = (double*)calloc( k, sizeof(double));
-			cxIm = (double*)calloc( k, sizeof(double));
-			sxIm = (double*)calloc( k, sizeof(double));
-			mxIm = (double*)calloc( 8, sizeof(double));
-			csxIm = (double*)calloc( k, sizeof(double));
-			aIm = (double*)calloc( k, sizeof(double));
-			bIm = (double*)calloc( k, sizeof(double));
-			Cosf = (double*)calloc(N, sizeof(double));
-			Sinf = (double*)calloc(N,sizeof(double));
-		
-			//	double *axRe, *bxRe , *cxRe, *csxRe, *aRe, *bRe;
-/*
-				double MRe, 
-		MIm, 
-		m, 
-		RezRe, 
-		RezIm;
-*/
-			for ( i = 0; i < N; i++ )
-			{
-				for ( j = 0; j < N; j++ )
-				{
-    				Cosf[i] = cos( 2.0 * Pi * (i+j) / (k*N) );
-					Sinf[i] = sin( 2.0 * Pi * (i+j) / (k*N) );
-				}
-			}
-
-			RezRe = RezIm = MRe = MIm = 0.0;
-			mRe = mIm = 1.0;
-			mxRe[0] = 1.0;
-			mxIm[0] = 0.0;
-			mxRe[2] = mxIm[2] = 1.0;
-			mxRe[1] = 1.0; 
-			mxIm[1] = -1.0;
-
-
-
-			//		, bxRe , cxRe, csxRe, rezRe, aRe, bRe;			
-		}
-
-		
-		void signal_fft::DiofantGetSolve( double A, double B )
-		{
-			div_t div_result;
-			double a = 1.0,
-				b = 0.0,
-				c = 0.0,
-				d = 1.0,
-				x,
-				y,
-				temp,
-				q,
-				z;
-			
-			x = A; y = B;
-			
-	
-			while( mod(x,y) != 0 )
-			{
-				if ( y !=0.0 )
-					div_result = div((int)x,(int)y);
-				q = div_result.quot;
-				temp = a;
-				a = b;
-				b = temp - b * q;
-				temp = c;
-				c = d;
-				d = temp - d * q;
-				x = y;
-				y = mod(temp,y);
-				
-			}
-			z = b * A + d * B;
-			if ( z == 0.0 ) 
-				z = 1.0;
-			Az = b / z;
-			Bz = d / z;
-			
-			
-			
-			
-		}
-
-
-		void signal_fft::DoVinograd( int k )
-		{
-
-				int i, j;
-				RezRe = RezIm = 0.0;
-				MRe = MIm = 1.0;
-				mRe = mIm = 1.0;
-				mxRe[0] = 1.0;
-				mxIm[0] = 0.0;
-				mxRe[2] = mxIm[2] = 1.0;
-				mxRe[1] = 1.0; 
-				mxIm[1] = -1.0;
-
-
-				for ( j = 0; j < k; j++ )
-				{
-					axRe[j] = mod(aRe[j], mxRe[j]);
-					axIm[j] = mod(aIm[j], mxIm[j]);				
-				}
-				for ( j = 0; j < k; j++ )
-				{
-					bxRe[j] = mod(bRe[j], mxRe[j]);
-					bxIm[j] = mod(bIm[j], mxIm[j]);
-				}
-
-				for ( j = 0; j < k; j++ )
-				{
-					sxRe[j] = mod(axRe[j] * bxRe[j], mxRe[j]);
-					sxIm[j] = mod(axIm[j] * bxIm[j], mxIm[j]);
-				}
-
-				for ( i = 0; i < k; i++ )
-				{
-					
-					for ( j = 0; j < k; j++ )
-					{
-						if ( j == i )
-						{
-							MRe *= mxRe[j];
-							MIm *= mxIm[j];
-						}
-					}
-					DiofantGetSolve( mxRe[i], MRe);
-					cxRe[i] = MRe * Az;
-					DiofantGetSolve( mxIm[i], MIm );
-					cxIm[i] = MIm * Az;
-					
-				}
-				for ( j = 0; j < k; j++ )
-				{
-					csxRe[j] = sxRe[j] * cxRe[j];
-					csxIm[j] = sxIm[j] * cxIm[j];
-				}
-				for ( j = 0; j < k; j++ )
-				{
-					RezRe += csxRe[j];
-					RezIm += csxIm[j];
-					mRe *= mxRe[j];
-					mIm *= mxIm[j];
-				}
-				mRe = mRe * aRe[k-1] * bRe[k-1]; // GetCoef
-				mIm = mIm * aIm[k-1] * bIm[k-1];
-				//	cout<< mod(RezRe, mRe);
-				RezRe = mod(RezRe, mRe) + mRe;
-				RezIm = mod(RezIm, mIm) + mIm;
-		}
-		
-		void signal_fft :: Vinograd( int k )
-		{
-			int i, j;
-			for ( i = 0; i < N; i++ )
-			{
-
-				for( j = 0; j < k; j++)
-				{
-					aRe[j] = sign_matrixRe[i + j];
-					aIm[j] = sign_matrixIm[i + j];
-					bRe[j] = Cosf[i+j];
-					bIm[j] = Sinf[i+j];
-				}
-				DoVinograd( k );
-				freq_matrixRe[i] = RezRe;
-				freq_matrixIm[i] = RezIm;
-			}
-		}
-
-
-
-		void signal_fft :: Spec_Filter( int i )
-		{
-			freq_matrixRe[i] *= flt_matrix[i];
-			freq_matrixIm[i] *= flt_matrix[i];
-			
-		}
-
-
-	
-		void signal_fft::NormSpectr() // ii?ie?iaaiea niaeo?a
-		{
-			double maxRe, maxIm;
-			int i = 0;
-			maxRe = fabs ( freq_matrixRe[0] );
-			maxIm = fabs ( freq_matrixIm[0] );
-
-			for ( i = 1 ; i <= N; i++ )
-			{
-				if ( fabs( freq_matrixRe[i] ) > maxRe ) 
-					maxRe = fabs( freq_matrixRe[i] );				
-				if ( fabs( freq_matrixIm[i] ) > maxIm ) 
-					maxIm = fabs( freq_matrixIm[i] );				
-			}
-
-			for ( i = 1; i <= N; i++ )
-			{
-				freq_matrixRe[i] = double ( freq_matrixRe[i] / maxRe );
-				freq_matrixIm[i] = double ( freq_matrixIm[i] / maxIm );
-			}
-
-			
-		}
-
-		double signal_fft::TriangleWindow( int n ) // o?aoaieuiia ieii
-		{
-			double tmp = 1.0;
-			if ( ( n / 2.0 == (double)((int)(n/2.0)))) // ?aoiia ?enei "n"
-			{
-				if ( ( n >= 1 ) && ( n <= ( N + 1 ) / 2.0 ) )
-					tmp = 2 * n / ( N + 1.0 );
-					else
-					tmp = 2 * ( N - n - 1 ) / N ;
-						
-			} else
-			{
-				if ( ( n >= 1 ) && ( n <= ( N + 1 ) / 2.0 ) )
-					tmp = ( 2 * n - 1 ) / N;
-					else
-					tmp = 2 * ( N - n + 1 ) / N ;
-
-				}
-			
-			return tmp;
-		}
-
-		double signal_fft::CosinusWindow( int n ) // eineioniia ieii
-		{
-			double sw = 1.0;
-			if ( ( n >= 0 ) && ( n <= N/10 - 1 ) )
-			{
-				sw = cos( 5 * Pi * ( n - N/2 ) / N ) * cos( 5 * Pi * ( n - N/2 ) / N );
-			} else if ( ( n >= N / 10 ) && ( n <= 9 * N / 10 ) )
-			{
-				sw = 1.0;
-			} else if ( ( n >= N / 10 + 1 ) && ( n <= N ) )
-			{
-				sw  = cos( 5 * Pi * ( n - N/2 ) / N ) * cos( 5 * Pi * ( n - N/2 ) / N );
-			}
-			return sw;
-		}
-		
-		void signal_fft::HammingWindow()
-		{
-			unsigned int m = 0, 
-				L = 5,
-				i, k ,j; 
-
-			m = (int)(L / 2);  
-			for ( k = 0; k <= m; k++ )
-			{
-				j = (int)( N / 2 - 1 - k );
-				for ( i = 0; i <= j; i++ )
-				{
-					freq_matrixRe[i] += freq_matrixRe[i+1];
-					freq_matrixIm[i] += freq_matrixIm[i+1];				
-				}
-				for ( i = 0; i < j; i++ )
-				{
-					freq_matrixRe[j - i] += freq_matrixRe[j - i - 1];
-					freq_matrixIm[j - i] += freq_matrixIm[j - i - 1];				
-				}
-
-			}
-
-		}
-		
-		
-		double signal_fft::MeanFreq ( int k, int L )
-		{
-			int l = 0;
-			if ( k > L / 2 )
-			{
-				for ( l = - L / 2; l <= L / 2 ; l++ )
-				{
-					freq_matrixRe[k] +=  freq_matrixRe[k + l];
-					
-					freq_matrixIm[k] +=  freq_matrixIm[k + l];
-				}
-				freq_matrixRe[k] /= L;
-				freq_matrixIm[k] /= L;
-
-				for ( l = - L / 2; l <= L / 2 ; l++ )
-				{
-					freq_matrixRe[k+l] =  freq_matrixRe[k];
-					
-					freq_matrixIm[k+l] =  freq_matrixIm[k];
-				}
-
-
-			}
-			return freq_matrixRe[k];
-		}
-
-		void MainSignal::GaussNoise( int N ) // Aaonnianeee ooi
-		{
-			int i;
-			srand( (unsigned)time( NULL ) );
-			sign_matrixRe[0] = 1.0;
-			sign_matrixIm[0] = 1.0;
-			for ( i = 0; i <= 1023; i++  )
-			{	
-				sign_matrixRe[i] = (double)((rand())/24000.0);
-				sign_matrixIm[i] = (double)((rand())/24000.0);
-			/*	sign_matrixRe[i] /= 24000.0;
-				sign_matrixIm[i] /= 24000.0;
-			*/}
-		}
-
-		double MainSignal::AWGN( int K , double Att /* Att - ioiineoaeuiue o?iaaiu ooia */ ) // Aaonnianeee ooi
-		{
-			int i;
-			int znak = 0; // 0 - "-" 1 - "+"
-			double GN = Att, Med = 0.0;
-	   	//	srand( (unsigned)time( NULL ) );
-			for ( i = 0; i < K; i++ )
-			{
-				Med += rand() ;
-				Med /= ( i + 1 );
-				GN *= ( rand()  / ( 24000.0 ) );		
-			}
-
-
-			GN *= Att*2.0;
-			//GN = GN/N;
-			GN -= 0.5*GN;
-			return ( GN );
-
-		}
-
-		void MainSignal::RandomRect( int Ns, double Sm, double Ampl) // Aaia?aoey N ?aiaiiece?iaaiiuo i?yiioa.eiioeunia
-		{
-			// T - ia?eia eiioeunia Sm - niauaiea ( ?aeiiaia - -0.5 ), N - aenia?ney
-			int i, k, z;
-			double Re = 0.0 , Im = 0.0, MRe, MIm;
-			MRe = 0.0;
-			MIm = 0.0;
-			z = 2*Ns;// int ( T / dT );
-			k = 0;		
-			srand((unsigned)time(NULL));
-			for ( i = 0; i <= N; i++  )
-			{
-
-				if ( k < z )
-				{
-					if ( Re <= ( MRe / ( i + 1 ) ) )
-					{
-						sign_matrixRe[i] = Ampl - Sm;
-
-					} else sign_matrixRe[i] = -Ampl + 2 * Sm;
- 
-					if ( Im <= ( MIm / ( i + 1 )))
-					{
-						sign_matrixIm[i] = Ampl - Sm;
-
-					} else sign_matrixIm[i] = -Ampl + 2 * Sm;
- 
-
-				k++;
-				} else
-				{
-					k = 0;
-					Re = rand();
-					Im = rand();
-					sign_matrixIm[i] = sign_matrixIm[i-1];
-					sign_matrixRe[i] = sign_matrixRe[i-1];
-					
-				}
-					MRe += Re;
-					MIm += Im;
-
-			}
-
-		}
-		
-		
-		signal_fft::~signal_fft()
-		{
-		/*	*freq_matrixRe = 0 ;
-			*sign_matrixRe = 0 ;
-			*freq_matrixIm = 0 ;
-			*sign_matrixIm = 0 ;
-		*/
-		}
-			
-		MainSignal::~MainSignal()
-		{
-			*freq_matrixRe = 0 ;
-			*sign_matrixRe = 0 ;
-			*freq_matrixIm = 0 ;
-			*sign_matrixIm = 0 ;
-		}

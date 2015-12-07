@@ -8,7 +8,7 @@
 #define FDLL2API extern "C" __declspec(dllexport)
 #include "include\mathfunc.h"
 #include "include\signal_t.h"
-#include "include\signal_fft.h" 
+#include "include\signal_fft.h"
 
 
 

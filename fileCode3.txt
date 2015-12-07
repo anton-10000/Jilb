@@ -1,0 +1,231 @@
+#include <windows.h>
+#include <iostream.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <mmsystem.h>
+#include <conio.h>
+#include "resource.h"
+#include "change.h"
+
+HINSTANCE hInst;
+
+#include "NewConst.h"
+#include "Const.h"
+#include "Function.h"
+
+/////////////////////////////////////////////////////////////////////////
+LRESULT CALLBACK DlgProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
+{   
+	int wmId=LOWORD(wParam),wmEvent=HIWORD(wParam);
+	String vir;
+
+	switch (iMsg) 
+	{
+	case WM_INITDIALOG:
+		{
+			for (int i=0; i<KOL_PER; i++)
+				SendDlgItemMessage(hWnd,IDC_COMBO_NAME,CB_ADDSTRING,0,(LPARAM)x[i].string);
+			SendDlgItemMessage(hWnd,IDC_COMBO_NAME,CB_SETCURSEL,0,0);
+			return 0;
+		}
+
+  	case WM_CLOSE:
+		{
+			EndDialog(hWnd,0);
+			return 0;
+		}
+
+	case WM_COMMAND:
+		{
+			switch(wmId)
+			{
+			case IDC_GET:
+			{
+				if (wmEvent==EN_UPDATE && (GetKeyState(13)==-127 || GetKeyState(13)==-128))
+				{	
+					GetDlgItemText(hWnd,IDC_GET,vir.string,1024);
+					if (!Change(vir,1))
+						sprintf(vir.string,"%f",Change(vir,0));
+					else
+						sprintf(vir.string,"%s","Ioeaea");
+					if (def_error)
+						sprintf(vir.string,"Iao cia?aiey");
+					SetDlgItemText(hWnd,IDC_RAVNO,vir.string);
+					if (strlen(error.string)>0)
+						MessageBox(hWnd,error.string,0,0);
+					strcpy(error.string,"");
+				}
+			return TRUE;
+			break;
+			}
+
+			case IDC_NAME:
+			{	
+				int ind  = SendDlgItemMessage( hWnd, IDC_COMBO_NAME,CB_GETCURSEL,0,0);
+				if (ind>=0 && ind<=KOL_PER) 
+				{
+					GetWindowText( GetDlgItem(hWnd, IDC_NAME ),name[ind].string,LENGTH );
+					
+					SendDlgItemMessage( hWnd,IDC_COMBO_NAME,CB_RESETCONTENT,0,0);//Oaaeyai aanu nienie
+					for (int i=0; i<KOL_PER; i++)
+					{
+						SendDlgItemMessage( hWnd, IDC_COMBO_NAME, CB_ADDSTRING,0,(LPARAM)name[i].string);
+					}
+					SendDlgItemMessage( hWnd, IDC_COMBO_NAME, CB_SETCURSEL,ind,0);
+				}
+				return TRUE;
+				break;
+			}
+
+			case IDC_COMBO_NAME:
+			{	
+				char buf[256];
+				
+				int ind  = SendDlgItemMessage( hWnd, IDC_COMBO_NAME,CB_GETCURSEL,0,0);
+					
+				SetWindowText( GetDlgItem( hWnd,IDC_X ), x[ind].string );
+				SetWindowText( GetDlgItem( hWnd, IDC_NAME ), name[ind].string );
+				GetWindowText( GetDlgItem( hWnd, IDC_COMBO_NAME ), buf, LENGTH );
+				SendDlgItemMessage( hWnd,IDC_COMBO_NAME,CB_GETLBTEXT,(WPARAM)ind,(LPARAM)buf );
+				
+				return TRUE;
+				break;
+			}
+			
+			case IDC_X:
+				{
+					int ind  = SendDlgItemMessage( hWnd, IDC_COMBO_NAME,CB_GETCURSEL,0,0);
+					GetWindowText(GetDlgItem(hWnd,IDC_X),x[ind].string,LENGTH);
+					
+					return TRUE;
+					break;
+				}
+
+			case IDC_SUMM:
+				{
+					GetDlgItemText(hWnd,IDC_GET,vir.string,1024);
+					if (!Change(vir,1))
+						sprintf(vir.string,"%f",Change(vir,0));
+					else
+						sprintf(vir.string,"%s","Ioeaea");
+					if (def_error)
+						sprintf(vir.string,"Iao cia?aiey");
+					SetDlgItemText(hWnd,IDC_RAVNO,vir.string);
+					if (strlen(error.string)>0)
+						MessageBox(hWnd,error.string,0,0);
+					strcpy(error.string,"");
+					return TRUE;
+					break;
+				}
+
+			case IDC_CONST:
+				{
+					DialogBox(hInst, (LPCTSTR)IDD_CONST, hWnd, (DLGPROC)Const);
+					return TRUE;
+					break;
+				}
+
+			case IDC_NEW:
+				{
+					DialogBox(hInst, (LPCTSTR)IDD_FUNCTION, hWnd, (DLGPROC)Function);
+					return TRUE;
+					break;
+				}
+			
+			case ID_LOAD_ALL:
+				{
+					String buf;
+					Load(4);
+					for (int i=0; i<KOL_PER; i++)
+						SendDlgItemMessage(hWnd,IDC_COMBO_NAME,CB_ADDSTRING,0,(LPARAM)x[i].string);
+					SendDlgItemMessage(hWnd,IDC_COMBO_NAME,CB_SETCURSEL,0,0);
+
+					int ind  = SendDlgItemMessage( hWnd, IDC_COMBO_NAME,CB_GETCURSEL,0,0);
+					SetWindowText( GetDlgItem( hWnd,IDC_X ), x[ind].string );
+					SetWindowText( GetDlgItem( hWnd, IDC_NAME ), name[ind].string );
+					GetWindowText( GetDlgItem( hWnd, IDC_COMBO_NAME ), buf.string, LENGTH );
+					SendDlgItemMessage( hWnd,IDC_COMBO_NAME,CB_GETLBTEXT,(WPARAM)ind,(LPARAM)buf.string );
+					return TRUE;
+					break;
+				}
+
+			case ID_LOAD_P:
+				{
+					String buf;
+					Load(3);
+					for (int i=0; i<KOL_PER; i++)
+						SendDlgItemMessage(hWnd,IDC_COMBO_NAME,CB_ADDSTRING,0,(LPARAM)x[i].string);
+					SendDlgItemMessage(hWnd,IDC_COMBO_NAME,CB_SETCURSEL,0,0);
+
+					int ind  = SendDlgItemMessage( hWnd, IDC_COMBO_NAME,CB_GETCURSEL,0,0);
+					SetWindowText( GetDlgItem( hWnd,IDC_X ), x[ind].string );
+					SetWindowText( GetDlgItem( hWnd, IDC_NAME ), name[ind].string );
+					GetWindowText( GetDlgItem( hWnd, IDC_COMBO_NAME ), buf.string, LENGTH );
+					SendDlgItemMessage( hWnd,IDC_COMBO_NAME,CB_GETLBTEXT,(WPARAM)ind,(LPARAM)buf.string );
+					return TRUE;
+					break;
+				}
+
+			case ID_LOAD_F:
+				{
+					Load(2);
+					return TRUE;
+					break;
+				}
+
+			case ID_LOAD_C:
+				{
+					Load(1);
+					return TRUE;
+					break;
+				}
+
+			case ID_SAVE_ALL:
+				{
+					Save(4);
+					return TRUE;
+					break;
+				}
+
+			case ID_SAVE_P:
+				{
+					Save(3);
+					return TRUE;
+					break;
+				}
+
+			case ID_SAVE_F:
+				{
+					Save(2);
+					return TRUE;
+					break;
+				}
+
+			case ID_SAVE_C:
+				{
+					Save(1);
+					return TRUE;
+					break;
+				}
+
+			case ID_EXIT:
+				{
+					EndDialog(hWnd,0);
+					return TRUE;
+					break;
+				}
+			}
+		}
+	}
+	return FALSE;
+}
+
+int WINAPI WinMain( HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine, int nShowCmd)
+{
+	Init();
+	int ret;
+	hInst = hInstance;
+	ret = DialogBox( hInstance, MAKEINTRESOURCE(IDD_CALCULATOR), NULL, (DLGPROC)DlgProc );
+	return ret;
+}

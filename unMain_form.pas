@@ -200,14 +200,15 @@ end;
 procedure Parse(var code:AnsiString);
  var
   sizeCode,i:Integer;
-  IsComment,IsStr:Boolean;
+  IsComment,IsStr,IsCommentMltln:Boolean;
 begin
   sizeCode:=Length(code);
   IsStr:=False;
   IsComment:=False;
+  IsCommentMltln:=False;
   for i:=1 to sizeCode do begin
 //Нахожу ковычку и эта ковычка не в коментарии, значит затираю её
-    if (code[i]='"') and (IsComment=False)
+    if (code[i]='"') and (IsComment=False) and (IsCommentMltln=false)
      then begin
       if (IsStr=True)
        then begin
@@ -220,16 +221,32 @@ begin
      if (IsStr=True) //Режим строки True, значит затираю символ
       then code[i]:=' ';
 
-     if ((code[i]='/') and (code[i+1]='/') and (IsStr=False))//Начало коментария
+     if ((code[i]='/') and (code[i+1]='/') and (IsStr=False) and (IsCommentMltln=false))//Начало коментария
         or ((code[i]=''#$D'') and  (code[i+1]=''#$A'') and (IsComment=True))//Конец коментария
      then begin
       if (IsComment=True)
        then IsComment:=False
        else IsComment:=True;
       end;
+
      if (IsComment=True)
       then code[i]:=' ';
-  end;
+
+      if ((code[i]='/') and (code[i+1]='*') and (IsStr=False) and (IsComment=false))
+        or ((code[i]='*') and  (code[i+1]='/') and (IsCommentMltln=True))
+      then begin
+       if (IsCommentMltln=True)
+       then begin
+        IsCommentMltln:=False;
+        code[i]:=' ';
+        code[i+1]:=' ';
+        end
+       else IsCommentMltln:=True;
+      end;
+
+      if (IsCommentMltln=True)
+       then code[i]:=' ';
+   end;
 
  //Замена операндов на @ 
   for i:=1 to N do begin

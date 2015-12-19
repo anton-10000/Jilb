@@ -200,14 +200,15 @@ end;
 procedure Parse(var code:AnsiString);
  var
   sizeCode,i:Integer;
-  IsComment,IsStr:Boolean;
+  IsComment,IsStr,IsCommentMltln:Boolean;
 begin
   sizeCode:=Length(code);
   IsStr:=False;
   IsComment:=False;
+  IsCommentMltln:=False;
   for i:=1 to sizeCode do begin
 //Нахожу ковычку и эта ковычка не в коментарии, значит затираю её
-    if (code[i]='"') and (IsComment=False)
+    if (code[i]='"') and (IsComment=False) and (IsCommentMltln=false)
      then begin
       if (IsStr=True)
        then begin
@@ -220,16 +221,33 @@ begin
      if (IsStr=True) //Режим строки True, значит затираю символ
       then code[i]:=' ';
 
-     if ((code[i]='/') and (code[i+1]='/') and (IsStr=False))//Начало коментария
+     if ((code[i]='/') and (code[i+1]='/') and (IsStr=False) and (IsCommentMltln=false))//Начало коментария
         or ((code[i]=''#$D'') and  (code[i+1]=''#$A'') and (IsComment=True))//Конец коментария
      then begin
       if (IsComment=True)
        then IsComment:=False
        else IsComment:=True;
       end;
+
      if (IsComment=True)
       then code[i]:=' ';
-  end;
+
+      if ((code[i]='/') and (code[i+1]='*') and (IsStr=False) and (IsComment=false))
+        or ((code[i]='*') and  (code[i+1]='/') and (IsCommentMltln=True))
+      then begin
+       if (IsCommentMltln=True)
+       then begin
+        IsCommentMltln:=False;
+        code[i]:=' ';
+        code[i+1]:=' ';
+        end
+       else IsCommentMltln:=True;
+      end;
+
+      if (IsCommentMltln=True)
+       then code[i]:=' ';
+
+   end;
 
  //Замена операндов на @ 
   for i:=1 to N do begin
@@ -259,20 +277,20 @@ procedure TForm1.btnRunClick(Sender: TObject);
   RltvCL:Real;
   arrElse,arrElseIf:TarrInteger;
 begin
-  code:=mmCode.Text;
-  Parse(code);
-  CalcOperand(code,AbsltCL,RltvCL);
-  CalcEntry(code,arrElseIf,'else if');
-  CalcEntry(code,arrElse,'else');
+  code:=mmCode.Text;//Записываю анализируемый код в переменную
+  Parse(code);//Удаляю коментарии, строки, заменяю операнды на @
+  CalcOperand(code,AbsltCL,RltvCL); //Расчитываю Абсолютную и Относительную сложность
+  CalcEntry(code,arrElseIf,'else if');//Ищу позиции else if
+  CalcEntry(code,arrElse,'else');//Ищу позиции else
 
-   NElse:=CalcInvestment(code,arrElse);
-   NElseIf:=CalcInvestment(code,arrElseIf);
+  NElse:=CalcInvestment(code,arrElse);//Ищу максимальную вложенность else
+  NElseIf:=CalcInvestment(code,arrElseIf);//Ищу максимальную вложенность else if
 
+//Заношу расчёты в label  
   lblAbsltCL.Caption:=IntToStr(AbsltCL);
   lblRltvCL.Caption:=FloatToStrF(RltvCL,ffFixed,10,5);
   lblMaxElse.Caption:=IntToStr(NElse);
   lblMaxElseIf.Caption:=IntToStr(NElseIf);
-
 end;
 
 
